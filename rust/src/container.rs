@@ -130,7 +130,7 @@ impl From<MappingBuilder> for ObjectMeta {
 fn build_mapping_recurse(
     path: &mut Utf8PathBuf,
     dir: &gio::File,
-    ts: &crate::ffi::RpmTs,
+    files_to_pkg: &HashMap<String, Vec<String>>,
     state: &mut MappingBuilder,
 ) -> Result<()> {
     use std::collections::btree_map::Entry;
@@ -155,7 +155,10 @@ fn build_mapping_recurse(
                     continue;
                 }
 
-                let mut pkgs = ts.packages_providing_file(path.as_str())?;
+                let mut pkgs: Vec<String> = files_to_pkg
+                    .get(path.as_str())
+                    .map(|pkgs| pkgs.to_vec())
+                    .unwrap_or_default();
                 // Let's be deterministic (but _unstable because we don't care about behavior of equal strings)
                 pkgs.sort_unstable();
                 // For now, we pick the alphabetically first package providing a file
@@ -192,7 +195,7 @@ fn build_mapping_recurse(
                 }
             }
             gio::FileType::Directory => {
-                build_mapping_recurse(path, &child, ts, state)?;
+                build_mapping_recurse(path, &child, files_to_pkg, state)?;
             }
             o => anyhow::bail!("Unhandled file type: {}", o),
         }
@@ -377,9 +380,35 @@ pub fn container_encapsulate(args: Vec<String>) -> CxxResult<()> {
         // TODO add mapping for rpmdb
     }
 
+    // Walk each file entry for each RPM package, building a mapping
+    // from file to package as we go. We'll use this as a lookup table
+    // when walking the live filesystem.
+    let rpmdb_files_to_pkg: HashMap<String, Vec<String>> = {
+        let mut files_to_pkg = HashMap::<String, Vec<String>>::new();
+        for (pkg_name, meta) in package_meta {
+            for file in meta
+                .enumerate_files()
+                .expect("Failed to enumerate files")
+                .iter()
+            {
+                if let Some(pkgs) = files_to_pkg.get_mut(file) {
+                    pkgs.push(pkg_name.to_string());
+                } else {
+                    files_to_pkg.insert(file.to_owned(), vec![pkg_name.to_string()]);
+                }
+            }
+        }
+        files_to_pkg
+    };
+
     // Walk the filesystem
     progress_task("Building package mapping", || {
-        build_mapping_recurse(&mut Utf8PathBuf::from("/"), &root, &q, &mut state)
+        build_mapping_recurse(
+            &mut Utf8PathBuf::from("/"),
+            &root,
+            &rpmdb_files_to_pkg,
+            &mut state,
+        )
     })?;
 
     let src_pkgs: HashSet<_> = state.packagemeta.iter().map(|p| &p.srcid).collect();

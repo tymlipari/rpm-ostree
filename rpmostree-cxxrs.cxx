@@ -2811,6 +2811,9 @@ extern "C"
   ::rust::repr::PtrLen
   rpmostreecxx$cxxbridge1$complete_rpm_layering (::std::int32_t rootfs) noexcept;
 
+  ::rust::repr::PtrLen
+  rpmostreecxx$cxxbridge1$deduplicate_tmpfiles_entries (::std::int32_t rootfs) noexcept;
+
   ::rust::repr::PtrLen rpmostreecxx$cxxbridge1$passwd_cleanup (::std::int32_t rootfs) noexcept;
 
   ::rust::repr::PtrLen rpmostreecxx$cxxbridge1$migrate_group_except_root (
@@ -2939,9 +2942,6 @@ extern "C"
 
   void rpmostreecxx$cxxbridge1$cache_branch_to_nevra (::rust::Str nevra,
                                                       ::rust::String *return$) noexcept;
-
-  ::rust::repr::PtrLen
-  rpmostreecxx$cxxbridge1$deduplicate_tmpfiles_entries (::std::int32_t rootfs) noexcept;
 
   ::std::uint32_t
   rpmostreecxx$cxxbridge1$CxxGObjectArray$length (::rpmostreecxx::CxxGObjectArray &self) noexcept
@@ -3204,16 +3204,17 @@ extern "C"
   }
 
   ::rust::repr::PtrLen
-  rpmostreecxx$cxxbridge1$rpmts_for_commit (::rpmostreecxx::OstreeRepo const &repo, ::rust::Str rev,
-                                            ::rpmostreecxx::RpmTs **return$) noexcept
+  rpmostreecxx$cxxbridge1$rpmts_for_commit (
+      ::rpmostreecxx::OstreeRepo const &repo, ::rust::Str rev,
+      ::std::shared_ptr< ::rpmostreecxx::RpmTs> *return$) noexcept
   {
-    ::std::unique_ptr< ::rpmostreecxx::RpmTs> (*rpmts_for_commit$) (
+    ::std::shared_ptr< ::rpmostreecxx::RpmTs> (*rpmts_for_commit$) (
         ::rpmostreecxx::OstreeRepo const &, ::rust::Str)
         = ::rpmostreecxx::rpmts_for_commit;
     ::rust::repr::PtrLen throw$;
     ::rust::behavior::trycatch (
         [&] {
-          new (return$)::rpmostreecxx::RpmTs *(rpmts_for_commit$ (repo, rev).release ());
+          new (return$)::std::shared_ptr< ::rpmostreecxx::RpmTs> (rpmts_for_commit$ (repo, rev));
           throw$.ptr = nullptr;
         },
         ::rust::detail::Fail (throw$));
@@ -3231,24 +3232,6 @@ extern "C"
         [&] {
           new (return$)::rust::Vec< ::rust::String> (
               rpmdb_package_name_list$ (dfd, ::rust::String (::rust::unsafe_bitcopy, *path)));
-          throw$.ptr = nullptr;
-        },
-        ::rust::detail::Fail (throw$));
-    return throw$;
-  }
-
-  ::rust::repr::PtrLen
-  rpmostreecxx$cxxbridge1$RpmTs$packages_providing_file (
-      ::rpmostreecxx::RpmTs const &self, ::rust::Str path,
-      ::rust::Vec< ::rust::String> *return$) noexcept
-  {
-    ::rust::Vec< ::rust::String> (::rpmostreecxx::RpmTs::*packages_providing_file$) (::rust::Str)
-        const
-        = &::rpmostreecxx::RpmTs::packages_providing_file;
-    ::rust::repr::PtrLen throw$;
-    ::rust::behavior::trycatch (
-        [&] {
-          new (return$)::rust::Vec< ::rust::String> ((self.*packages_providing_file$) (path));
           throw$.ptr = nullptr;
         },
         ::rust::detail::Fail (throw$));
@@ -3303,6 +3286,22 @@ extern "C"
     ::std::string const &(::rpmostreecxx::PackageMeta::*src_pkg$) () const
         = &::rpmostreecxx::PackageMeta::src_pkg;
     return &(self.*src_pkg$) ();
+  }
+
+  ::rust::repr::PtrLen
+  rpmostreecxx$cxxbridge1$PackageMeta$enumerate_files (
+      ::rpmostreecxx::PackageMeta const &self, ::rust::Vec< ::rust::String> *return$) noexcept
+  {
+    ::rust::Vec< ::rust::String> (::rpmostreecxx::PackageMeta::*enumerate_files$) () const
+        = &::rpmostreecxx::PackageMeta::enumerate_files;
+    ::rust::repr::PtrLen throw$;
+    ::rust::behavior::trycatch (
+        [&] {
+          new (return$)::rust::Vec< ::rust::String> ((self.*enumerate_files$) ());
+          throw$.ptr = nullptr;
+        },
+        ::rust::detail::Fail (throw$));
+    return throw$;
   }
 
   ::rust::repr::PtrLen
@@ -5689,6 +5688,16 @@ complete_rpm_layering (::std::int32_t rootfs)
 }
 
 void
+deduplicate_tmpfiles_entries (::std::int32_t rootfs)
+{
+  ::rust::repr::PtrLen error$ = rpmostreecxx$cxxbridge1$deduplicate_tmpfiles_entries (rootfs);
+  if (error$.ptr)
+    {
+      throw ::rust::impl< ::rust::Error>::error (error$);
+    }
+}
+
+void
 passwd_cleanup (::std::int32_t rootfs)
 {
   ::rust::repr::PtrLen error$ = rpmostreecxx$cxxbridge1$passwd_cleanup (rootfs);
@@ -6094,16 +6103,6 @@ cache_branch_to_nevra (::rust::Str nevra) noexcept
   rpmostreecxx$cxxbridge1$cache_branch_to_nevra (nevra, &return$.value);
   return ::std::move (return$.value);
 }
-
-void
-deduplicate_tmpfiles_entries (::std::int32_t rootfs)
-{
-  ::rust::repr::PtrLen error$ = rpmostreecxx$cxxbridge1$deduplicate_tmpfiles_entries (rootfs);
-  if (error$.ptr)
-    {
-      throw ::rust::impl< ::rust::Error>::error (error$);
-    }
-}
 } // namespace rpmostreecxx
 
 extern "C"
@@ -6346,39 +6345,32 @@ extern "C"
     ::rust::deleter_if< ::rust::detail::is_complete< ::rpmostreecxx::Progress>::value>{}(ptr);
   }
 
-  static_assert (::rust::detail::is_complete< ::rpmostreecxx::RpmTs>::value,
-                 "definition of RpmTs is required");
-  static_assert (sizeof (::std::unique_ptr< ::rpmostreecxx::RpmTs>) == sizeof (void *), "");
-  static_assert (alignof (::std::unique_ptr< ::rpmostreecxx::RpmTs>) == alignof (void *), "");
+  static_assert (sizeof (::std::shared_ptr< ::rpmostreecxx::RpmTs>) == 2 * sizeof (void *), "");
+  static_assert (alignof (::std::shared_ptr< ::rpmostreecxx::RpmTs>) == alignof (void *), "");
   void
-  cxxbridge1$unique_ptr$rpmostreecxx$RpmTs$null (
-      ::std::unique_ptr< ::rpmostreecxx::RpmTs> *ptr) noexcept
+  cxxbridge1$shared_ptr$rpmostreecxx$RpmTs$null (
+      ::std::shared_ptr< ::rpmostreecxx::RpmTs> *ptr) noexcept
   {
-    ::new (ptr)::std::unique_ptr< ::rpmostreecxx::RpmTs> ();
+    ::new (ptr)::std::shared_ptr< ::rpmostreecxx::RpmTs> ();
   }
   void
-  cxxbridge1$unique_ptr$rpmostreecxx$RpmTs$raw (::std::unique_ptr< ::rpmostreecxx::RpmTs> *ptr,
-                                                ::rpmostreecxx::RpmTs *raw) noexcept
+  cxxbridge1$shared_ptr$rpmostreecxx$RpmTs$clone (
+      ::std::shared_ptr< ::rpmostreecxx::RpmTs> const &self,
+      ::std::shared_ptr< ::rpmostreecxx::RpmTs> *ptr) noexcept
   {
-    ::new (ptr)::std::unique_ptr< ::rpmostreecxx::RpmTs> (raw);
+    ::new (ptr)::std::shared_ptr< ::rpmostreecxx::RpmTs> (self);
   }
   ::rpmostreecxx::RpmTs const *
-  cxxbridge1$unique_ptr$rpmostreecxx$RpmTs$get (
-      ::std::unique_ptr< ::rpmostreecxx::RpmTs> const &ptr) noexcept
+  cxxbridge1$shared_ptr$rpmostreecxx$RpmTs$get (
+      ::std::shared_ptr< ::rpmostreecxx::RpmTs> const &self) noexcept
   {
-    return ptr.get ();
-  }
-  ::rpmostreecxx::RpmTs *
-  cxxbridge1$unique_ptr$rpmostreecxx$RpmTs$release (
-      ::std::unique_ptr< ::rpmostreecxx::RpmTs> &ptr) noexcept
-  {
-    return ptr.release ();
+    return self.get ();
   }
   void
-  cxxbridge1$unique_ptr$rpmostreecxx$RpmTs$drop (
-      ::std::unique_ptr< ::rpmostreecxx::RpmTs> *ptr) noexcept
+  cxxbridge1$shared_ptr$rpmostreecxx$RpmTs$drop (
+      ::std::shared_ptr< ::rpmostreecxx::RpmTs> *self) noexcept
   {
-    ::rust::deleter_if< ::rust::detail::is_complete< ::rpmostreecxx::RpmTs>::value>{}(ptr);
+    self->~shared_ptr ();
   }
 
   static_assert (::rust::detail::is_complete< ::rpmostreecxx::PackageMeta>::value,
@@ -6818,6 +6810,5 @@ Vec< ::rpmostreecxx::LockedPackage>::truncate (::std::size_t len)
 {
   return cxxbridge1$rust_vec$rpmostreecxx$LockedPackage$truncate (this, len);
 }
-
 } // namespace cxxbridge1
 } // namespace rust

@@ -76,30 +76,38 @@ rpmostree_refts_unref (RpmOstreeRefTs *rts)
 
 namespace rpmostreecxx
 {
+rust::Vec<rust::String>
+PackageMeta::enumerate_files() const
+{
+  rust::Vec<rust::String> ret;
+
+  auto owner_ts = _owner_ts.lock();
+  g_auto (rpmfi) file_itr = rpmfiNew(owner_ts->get_ts(), _rpm_header, 0, RPMFI_FLAGS_ONLY_FILENAMES);
+  if (file_itr == NULL) 
+    {
+      throw std::runtime_error("Error initializing rpm file iterator");
+    }
+
+  rpmfiInit(file_itr, 0);
+  while (rpmfiNext(file_itr) >= 0)
+    {
+      const char* filename = rpmfiOFN(file_itr);
+      if (filename)
+        ret.emplace_back(rust::String::lossy(filename));
+      else
+        throw std::runtime_error("Null filename?");
+    }
+
+  return ret;
+}
+
 
 RpmTs::RpmTs (RpmOstreeRefTs *ts) { _ts = ts; }
 
 RpmTs::~RpmTs () { rpmostree_refts_unref (_ts); }
 
-rust::Vec<rust::String>
-RpmTs::packages_providing_file (const rust::Str path) const
-{
-  auto path_c = std::string (path);
-  g_auto (rpmdbMatchIterator) mi
-      = rpmtsInitIterator (_ts->ts, RPMDBI_INSTFILENAMES, path_c.c_str (), 0);
-  if (mi == NULL)
-    mi = rpmtsInitIterator (_ts->ts, RPMDBI_PROVIDENAME, path_c.c_str (), 0);
-  rust::Vec<rust::String> ret;
-  if (mi != NULL)
-    {
-      Header h;
-      while ((h = rpmdbNextIterator (mi)) != NULL)
-        {
-          ret.push_back (rpmostreecxx::header_get_nevra (h));
-        }
-    }
-  return ret;
-}
+rpmts
+RpmTs::get_ts() const { return _ts->ts; }
 
 std::unique_ptr<PackageMeta>
 RpmTs::package_meta (const rust::Str name) const
@@ -120,6 +128,8 @@ RpmTs::package_meta (const rust::Str name) const
       if (!previous.has_value ())
         {
           previous = std::move (nevra);
+          retval->_owner_ts = shared_from_this();
+          retval->_rpm_header = h;
           retval->_size = headerGetNumber (h, RPMTAG_LONGARCHIVESIZE);
           retval->_buildtime = headerGetNumber (h, RPMTAG_BUILDTIME);
           retval->_src_pkg = headerGetString (h, RPMTAG_SOURCERPM);
