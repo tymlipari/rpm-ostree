@@ -3204,17 +3204,16 @@ extern "C"
   }
 
   ::rust::repr::PtrLen
-  rpmostreecxx$cxxbridge1$rpmts_for_commit (
-      ::rpmostreecxx::OstreeRepo const &repo, ::rust::Str rev,
-      ::std::shared_ptr< ::rpmostreecxx::RpmTs> *return$) noexcept
+  rpmostreecxx$cxxbridge1$rpmts_for_commit (::rpmostreecxx::OstreeRepo const &repo, ::rust::Str rev,
+                                            ::rpmostreecxx::RpmTs **return$) noexcept
   {
-    ::std::shared_ptr< ::rpmostreecxx::RpmTs> (*rpmts_for_commit$) (
+    ::std::unique_ptr< ::rpmostreecxx::RpmTs> (*rpmts_for_commit$) (
         ::rpmostreecxx::OstreeRepo const &, ::rust::Str)
         = ::rpmostreecxx::rpmts_for_commit;
     ::rust::repr::PtrLen throw$;
     ::rust::behavior::trycatch (
         [&] {
-          new (return$)::std::shared_ptr< ::rpmostreecxx::RpmTs> (rpmts_for_commit$ (repo, rev));
+          new (return$)::rpmostreecxx::RpmTs *(rpmts_for_commit$ (repo, rev).release ());
           throw$.ptr = nullptr;
         },
         ::rust::detail::Fail (throw$));
@@ -3290,14 +3289,16 @@ extern "C"
 
   ::rust::repr::PtrLen
   rpmostreecxx$cxxbridge1$PackageMeta$enumerate_files (
-      ::rpmostreecxx::PackageMeta const &self, ::rust::Vec< ::rust::String> *return$) noexcept
+      ::rpmostreecxx::PackageMeta const &self, ::rpmostreecxx::RpmTs const &ts,
+      ::rust::Vec< ::rust::String> *return$) noexcept
   {
-    ::rust::Vec< ::rust::String> (::rpmostreecxx::PackageMeta::*enumerate_files$) () const
+    ::rust::Vec< ::rust::String> (::rpmostreecxx::PackageMeta::*enumerate_files$) (
+        ::rpmostreecxx::RpmTs const &) const
         = &::rpmostreecxx::PackageMeta::enumerate_files;
     ::rust::repr::PtrLen throw$;
     ::rust::behavior::trycatch (
         [&] {
-          new (return$)::rust::Vec< ::rust::String> ((self.*enumerate_files$) ());
+          new (return$)::rust::Vec< ::rust::String> ((self.*enumerate_files$) (ts));
           throw$.ptr = nullptr;
         },
         ::rust::detail::Fail (throw$));
@@ -6345,32 +6346,39 @@ extern "C"
     ::rust::deleter_if< ::rust::detail::is_complete< ::rpmostreecxx::Progress>::value>{}(ptr);
   }
 
-  static_assert (sizeof (::std::shared_ptr< ::rpmostreecxx::RpmTs>) == 2 * sizeof (void *), "");
-  static_assert (alignof (::std::shared_ptr< ::rpmostreecxx::RpmTs>) == alignof (void *), "");
+  static_assert (::rust::detail::is_complete< ::rpmostreecxx::RpmTs>::value,
+                 "definition of RpmTs is required");
+  static_assert (sizeof (::std::unique_ptr< ::rpmostreecxx::RpmTs>) == sizeof (void *), "");
+  static_assert (alignof (::std::unique_ptr< ::rpmostreecxx::RpmTs>) == alignof (void *), "");
   void
-  cxxbridge1$shared_ptr$rpmostreecxx$RpmTs$null (
-      ::std::shared_ptr< ::rpmostreecxx::RpmTs> *ptr) noexcept
+  cxxbridge1$unique_ptr$rpmostreecxx$RpmTs$null (
+      ::std::unique_ptr< ::rpmostreecxx::RpmTs> *ptr) noexcept
   {
-    ::new (ptr)::std::shared_ptr< ::rpmostreecxx::RpmTs> ();
+    ::new (ptr)::std::unique_ptr< ::rpmostreecxx::RpmTs> ();
   }
   void
-  cxxbridge1$shared_ptr$rpmostreecxx$RpmTs$clone (
-      ::std::shared_ptr< ::rpmostreecxx::RpmTs> const &self,
-      ::std::shared_ptr< ::rpmostreecxx::RpmTs> *ptr) noexcept
+  cxxbridge1$unique_ptr$rpmostreecxx$RpmTs$raw (::std::unique_ptr< ::rpmostreecxx::RpmTs> *ptr,
+                                                ::rpmostreecxx::RpmTs *raw) noexcept
   {
-    ::new (ptr)::std::shared_ptr< ::rpmostreecxx::RpmTs> (self);
+    ::new (ptr)::std::unique_ptr< ::rpmostreecxx::RpmTs> (raw);
   }
   ::rpmostreecxx::RpmTs const *
-  cxxbridge1$shared_ptr$rpmostreecxx$RpmTs$get (
-      ::std::shared_ptr< ::rpmostreecxx::RpmTs> const &self) noexcept
+  cxxbridge1$unique_ptr$rpmostreecxx$RpmTs$get (
+      ::std::unique_ptr< ::rpmostreecxx::RpmTs> const &ptr) noexcept
   {
-    return self.get ();
+    return ptr.get ();
+  }
+  ::rpmostreecxx::RpmTs *
+  cxxbridge1$unique_ptr$rpmostreecxx$RpmTs$release (
+      ::std::unique_ptr< ::rpmostreecxx::RpmTs> &ptr) noexcept
+  {
+    return ptr.release ();
   }
   void
-  cxxbridge1$shared_ptr$rpmostreecxx$RpmTs$drop (
-      ::std::shared_ptr< ::rpmostreecxx::RpmTs> *self) noexcept
+  cxxbridge1$unique_ptr$rpmostreecxx$RpmTs$drop (
+      ::std::unique_ptr< ::rpmostreecxx::RpmTs> *ptr) noexcept
   {
-    self->~shared_ptr ();
+    ::rust::deleter_if< ::rust::detail::is_complete< ::rpmostreecxx::RpmTs>::value>{}(ptr);
   }
 
   static_assert (::rust::detail::is_complete< ::rpmostreecxx::PackageMeta>::value,

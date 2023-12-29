@@ -1677,7 +1677,7 @@ rpmostree_advisories_variant (DnfSack *sack, GPtrArray *pkgs)
 namespace rpmostreecxx
 {
 
-std::shared_ptr<RpmTs>
+std::unique_ptr<RpmTs>
 rpmts_for_commit (const OstreeRepo &repo, rust::Str rev)
 {
   g_autoptr (GError) local_error = NULL;
@@ -1687,7 +1687,7 @@ rpmts_for_commit (const OstreeRepo &repo, rust::Str rev)
                                        NULL, &local_error))
     util::throw_gerror (local_error);
 
-  return std::make_shared<RpmTs> (refts);
+  return std::make_unique<RpmTs> (refts);
 }
 
 }

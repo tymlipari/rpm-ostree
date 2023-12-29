@@ -902,7 +902,7 @@ pub mod ffi {
         #[allow(dead_code)]
         fn nevra_to_cache_branch(nevra: &CxxString) -> Result<String>;
         fn get_repodata_chksum_repr(pkg: &mut FFIDnfPackage) -> Result<String>;
-        fn rpmts_for_commit(repo: &OstreeRepo, rev: &str) -> Result<SharedPtr<RpmTs>>;
+        fn rpmts_for_commit(repo: &OstreeRepo, rev: &str) -> Result<UniquePtr<RpmTs>>;
         fn rpmdb_package_name_list(dfd: i32, path: String) -> Result<Vec<String>>;
 
         // Methods on RpmTs
@@ -913,7 +913,7 @@ pub mod ffi {
         fn buildtime(self: &PackageMeta) -> u64;
         fn changelogs(self: &PackageMeta) -> Vec<u64>;
         fn src_pkg(self: &PackageMeta) -> &CxxString;
-        fn enumerate_files(self: &PackageMeta) -> Result<Vec<String>>;
+        fn enumerate_files(self: &PackageMeta, ts: &RpmTs) -> Result<Vec<String>>;
     }
 
     // rpmostree-package-variants.h

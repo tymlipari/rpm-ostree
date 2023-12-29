@@ -77,12 +77,11 @@ rpmostree_refts_unref (RpmOstreeRefTs *rts)
 namespace rpmostreecxx
 {
 rust::Vec<rust::String>
-PackageMeta::enumerate_files() const
+PackageMeta::enumerate_files(const RpmTs& ts) const
 {
   rust::Vec<rust::String> ret;
 
-  auto owner_ts = _owner_ts.lock();
-  g_auto (rpmfi) file_itr = rpmfiNew(owner_ts->get_ts(), _rpm_header, 0, RPMFI_FLAGS_ONLY_FILENAMES);
+  g_auto (rpmfi) file_itr = rpmfiNew(ts.get_ts(), _rpm_header, 0, RPMFI_FLAGS_ONLY_FILENAMES);
   if (file_itr == NULL) 
     {
       throw std::runtime_error("Error initializing rpm file iterator");
@@ -128,7 +127,6 @@ RpmTs::package_meta (const rust::Str name) const
       if (!previous.has_value ())
         {
           previous = std::move (nevra);
-          retval->_owner_ts = shared_from_this();
           retval->_rpm_header = h;
           retval->_size = headerGetNumber (h, RPMTAG_LONGARCHIVESIZE);
           retval->_buildtime = headerGetNumber (h, RPMTAG_BUILDTIME);

@@ -380,29 +380,29 @@ pub fn container_encapsulate(args: Vec<String>) -> CxxResult<()> {
         // TODO add mapping for rpmdb
     }
 
-    // Walk each file entry for each RPM package, building a mapping
-    // from file to package as we go. We'll use this as a lookup table
-    // when walking the live filesystem.
-    let rpmdb_files_to_pkg: HashMap<String, Vec<String>> = {
-        let mut files_to_pkg = HashMap::<String, Vec<String>>::new();
-        for (pkg_name, meta) in package_meta {
-            for file in meta
-                .enumerate_files()
-                .expect("Failed to enumerate files")
-                .iter()
-            {
-                if let Some(pkgs) = files_to_pkg.get_mut(file) {
-                    pkgs.push(pkg_name.to_string());
-                } else {
-                    files_to_pkg.insert(file.to_owned(), vec![pkg_name.to_string()]);
-                }
-            }
-        }
-        files_to_pkg
-    };
-
     // Walk the filesystem
     progress_task("Building package mapping", || {
+        // Walk each file entry for each RPM package, building a mapping
+        // from file to package as we go. We'll use this as a lookup table
+        // when walking the live filesystem.
+        let rpmdb_files_to_pkg: HashMap<String, Vec<String>> = {
+            let mut files_to_pkg = HashMap::<String, Vec<String>>::new();
+            for (pkg_name, meta) in package_meta {
+                for file in meta
+                    .enumerate_files(&q)
+                    .expect("Failed to enumerate files from rpmdb")
+                    .iter()
+                {
+                    if let Some(pkgs) = files_to_pkg.get_mut(file) {
+                        pkgs.push(pkg_name.to_string());
+                    } else {
+                        files_to_pkg.insert(file.to_owned(), vec![pkg_name.to_string()]);
+                    }
+                }
+            }
+            files_to_pkg
+        };
+
         build_mapping_recurse(
             &mut Utf8PathBuf::from("/"),
             &root,
