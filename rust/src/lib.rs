@@ -51,12 +51,14 @@ pub mod ffi {
     // Types that are defined by gtk-rs generated bindings that
     // we want to pass across the cxx-rs boundary.  For more
     // information, see cxx_bridge_gobject.rs.
+
     extern "C++" {
         include!("src/libpriv/rpmostree-cxxrs-prelude.h");
 
         type OstreeDeployment = crate::FFIOstreeDeployment;
         #[allow(dead_code)]
         type OstreeRepo = crate::FFIOstreeRepo;
+        type OstreeRepoFile = crate::FFIOstreeRepoFile;
         type OstreeRepoTransactionStats = crate::FFIOstreeRepoTransactionStats;
         type OstreeSysroot = crate::FFIOstreeSysroot;
         type OstreeSePolicy = crate::FFIOstreeSePolicy;
@@ -894,6 +896,8 @@ pub mod ffi {
     unsafe extern "C++" {
         include!("rpmostree-rpm-util.h");
         #[allow(missing_debug_implementations)]
+        type FileToPackageMap;
+        #[allow(missing_debug_implementations)]
         type RpmTs;
         #[allow(missing_debug_implementations)]
         type PackageMeta;
@@ -905,9 +909,13 @@ pub mod ffi {
         fn rpmts_for_commit(repo: &OstreeRepo, rev: &str) -> Result<UniquePtr<RpmTs>>;
         fn rpmdb_package_name_list(dfd: i32, path: String) -> Result<Vec<String>>;
 
+        // Methods on FileToPackageMap
+        fn packages_for_file(self: &FileToPackageMap, file: &OstreeRepoFile) -> Result<Vec<String>>;
+
         // Methods on RpmTs
         fn packages_providing_file(self: &RpmTs, path: &str) -> Result<Vec<String>>;
         fn package_meta(self: &RpmTs, name: &str) -> Result<UniquePtr<PackageMeta>>;
+        fn build_file_to_pkg_map(self: &RpmTs) -> Result<UniquePtr<FileToPackageMap>>;
 
         // Methods on PackageMeta
         fn size(self: &PackageMeta) -> u64;

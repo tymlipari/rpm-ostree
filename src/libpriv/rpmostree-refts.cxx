@@ -77,6 +77,49 @@ rpmostree_refts_unref (RpmOstreeRefTs *rts)
 namespace rpmostreecxx
 {
 
+rust::Vec<rust::String>
+FileToPackageMap::packages_for_file (const OstreeRepoFile& file) const
+{
+  GFile* gfile = G_FILE (&file);
+  g_autoptr(GFile) parentfile = g_file_get_parent (gfile);
+
+  // Check to see if this file's directory was remapped
+  // on the file system
+  std::optional<std::string_view> remapped_dirname;
+  if (parentfile != NULL)
+    {
+      std::string dirname = g_file_peek_path (parentfile);
+
+      auto remapitr = _remapped_paths.find (dirname);
+      if (remapitr != _remapped_paths.end ())
+        remapped_dirname = std::string_view (remapitr->second);
+    }
+
+  // Determine the hash for the fs path, using the remapped parent
+  // if necessary
+  size_t path_hash;
+  if (remapped_dirname)
+    {
+      g_autofree const char* basename = g_file_get_basename (gfile);
+      auto remapped_path = std::string(*remapped_dirname) + "/" + basename;
+      path_hash = std::hash<std::string>{} (remapped_path);
+    }
+  else
+    {
+      path_hash = std::hash<std::string_view>{} (g_file_peek_path (gfile));
+    }
+
+  // Return the contents of our cache hit
+  rust::Vec<rust::String> ret_pkgs;
+  auto cacheitr = _path_hash_to_pkgs.find (path_hash);
+  if (cacheitr != _path_hash_to_pkgs.end ())
+    {
+      for (const rust::String& pkgid : cacheitr->second)
+        ret_pkgs.emplace_back (pkgid);
+    }
+  return ret_pkgs;
+}
+
 RpmTs::RpmTs (RpmOstreeRefTs *ts) { _ts = ts; }
 
 RpmTs::~RpmTs () { rpmostree_refts_unref (_ts); }
@@ -156,6 +199,42 @@ RpmTs::package_meta (const rust::Str name) const
   if (!previous)
     g_assert_not_reached ();
   return retval;
+}
+
+std::unique_ptr<FileToPackageMap>
+RpmTs::build_file_to_pkg_map () const
+{
+  std::unique_ptr<FileToPackageMap> result = std::make_unique<FileToPackageMap> ();
+
+  g_auto (rpmdbMatchIterator) mi = rpmtsInitIterator (_ts->ts, RPMDBI_PACKAGES, NULL, 0);
+  if (mi == NULL)
+      throw std::runtime_error ("Failed to read rpmdb");
+
+  Header h;
+  while ((h = rpmdbNextIterator (mi)) != NULL)
+    {
+      rust::String pkg_nevra = rpmostreecxx::header_get_nevra (h);
+
+      g_auto (rpmfi) fileitr = rpmfiNew (_ts->ts, h, 0, 0);
+      if (fileitr == NULL)
+        throw std::runtime_error ("Couldn't create file iterator");
+
+      rpmfiInit (fileitr, 0);
+      while (rpmfiNext (fileitr) >= 0)
+        {
+          rpm_mode_t fmode = rpmfiFMode (fileitr);
+
+          if (RPMFILE_IS_INSTALLED (rpmfiFState (fileitr)) && !S_ISDIR (fmode))
+            {
+              // TODO, see if dirname is remapped
+
+              size_t path_hash = std::hash<std::string_view>{} (rpmfiFN (fileitr));
+              result->_path_hash_to_pkgs[path_hash].insert (pkg_nevra);
+            }
+        }
+    }
+
+    return result;
 }
 
 }

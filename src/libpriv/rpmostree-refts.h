@@ -27,6 +27,8 @@
 #include <gio/gio.h>
 #include <libdnf/libdnf.h>
 #include <memory>
+#include <set>
+#include <unordered_map>
 
 G_BEGIN_DECLS
 
@@ -47,6 +49,17 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC (RpmOstreeRefTs, rpmostree_refts_unref);
 
 namespace rpmostreecxx
 {
+
+struct FileToPackageMap
+{
+  std::unordered_map<size_t, std::set<rust::String>> _path_hash_to_pkgs;
+  std::unordered_map<std::string, std::string> _remapped_paths;
+
+  FileToPackageMap() = default;
+
+  rust::Vec<rust::String>
+  packages_for_file (const OstreeRepoFile& file) const;
+};
 
 struct PackageMeta
 {
@@ -87,6 +100,7 @@ public:
   rpmts get_ts () const;
   rust::Vec<rust::String> packages_providing_file (const rust::Str path) const;
   std::unique_ptr<PackageMeta> package_meta (const rust::Str package) const;
+  std::unique_ptr<FileToPackageMap> build_file_to_pkg_map () const;
 
 private:
   ::RpmOstreeRefTs *_ts;

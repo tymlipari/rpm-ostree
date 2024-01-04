@@ -93,7 +93,7 @@ cxxrs_bind!(
     Ostree,
     ostree,
     ostree::ffi,
-    [Deployment, Repo, RepoTransactionStats, SePolicy, Sysroot]
+    [Deployment, Repo, RepoFile, RepoTransactionStats, SePolicy, Sysroot]
 );
 cxxrs_bind!(G, glib, glib::gobject_ffi, [Object]);
 cxxrs_bind!(G, gio, gio::ffi, [Cancellable, DBusConnection, FileInfo]);

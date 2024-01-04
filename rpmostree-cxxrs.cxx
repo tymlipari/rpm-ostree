@@ -1325,6 +1325,7 @@ using ClientConnection = ::rpmostreecxx::ClientConnection;
 using RPMDiff = ::rpmostreecxx::RPMDiff;
 using RpmOstreeDiffPrintFormat = ::rpmostreecxx::RpmOstreeDiffPrintFormat;
 using Progress = ::rpmostreecxx::Progress;
+using FileToPackageMap = ::rpmostreecxx::FileToPackageMap;
 using RpmTs = ::rpmostreecxx::RpmTs;
 using PackageMeta = ::rpmostreecxx::PackageMeta;
 }
@@ -2811,6 +2812,9 @@ extern "C"
   ::rust::repr::PtrLen
   rpmostreecxx$cxxbridge1$complete_rpm_layering (::std::int32_t rootfs) noexcept;
 
+  ::rust::repr::PtrLen
+  rpmostreecxx$cxxbridge1$deduplicate_tmpfiles_entries (::std::int32_t rootfs) noexcept;
+
   ::rust::repr::PtrLen rpmostreecxx$cxxbridge1$passwd_cleanup (::std::int32_t rootfs) noexcept;
 
   ::rust::repr::PtrLen rpmostreecxx$cxxbridge1$migrate_group_except_root (
@@ -2939,9 +2943,6 @@ extern "C"
 
   void rpmostreecxx$cxxbridge1$cache_branch_to_nevra (::rust::Str nevra,
                                                       ::rust::String *return$) noexcept;
-
-  ::rust::repr::PtrLen
-  rpmostreecxx$cxxbridge1$deduplicate_tmpfiles_entries (::std::int32_t rootfs) noexcept;
 
   ::std::uint32_t
   rpmostreecxx$cxxbridge1$CxxGObjectArray$length (::rpmostreecxx::CxxGObjectArray &self) noexcept
@@ -3238,6 +3239,24 @@ extern "C"
   }
 
   ::rust::repr::PtrLen
+  rpmostreecxx$cxxbridge1$FileToPackageMap$packages_for_file (
+      ::rpmostreecxx::FileToPackageMap const &self, ::rpmostreecxx::OstreeRepoFile const &file,
+      ::rust::Vec< ::rust::String> *return$) noexcept
+  {
+    ::rust::Vec< ::rust::String> (::rpmostreecxx::FileToPackageMap::*packages_for_file$) (
+        ::rpmostreecxx::OstreeRepoFile const &) const
+        = &::rpmostreecxx::FileToPackageMap::packages_for_file;
+    ::rust::repr::PtrLen throw$;
+    ::rust::behavior::trycatch (
+        [&] {
+          new (return$)::rust::Vec< ::rust::String> ((self.*packages_for_file$) (file));
+          throw$.ptr = nullptr;
+        },
+        ::rust::detail::Fail (throw$));
+    return throw$;
+  }
+
+  ::rust::repr::PtrLen
   rpmostreecxx$cxxbridge1$RpmTs$packages_providing_file (
       ::rpmostreecxx::RpmTs const &self, ::rust::Str path,
       ::rust::Vec< ::rust::String> *return$) noexcept
@@ -3266,6 +3285,24 @@ extern "C"
     ::rust::behavior::trycatch (
         [&] {
           new (return$)::rpmostreecxx::PackageMeta *((self.*package_meta$) (name).release ());
+          throw$.ptr = nullptr;
+        },
+        ::rust::detail::Fail (throw$));
+    return throw$;
+  }
+
+  ::rust::repr::PtrLen
+  rpmostreecxx$cxxbridge1$RpmTs$build_file_to_pkg_map (
+      ::rpmostreecxx::RpmTs const &self, ::rpmostreecxx::FileToPackageMap **return$) noexcept
+  {
+    ::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> (
+        ::rpmostreecxx::RpmTs::*build_file_to_pkg_map$) () const
+        = &::rpmostreecxx::RpmTs::build_file_to_pkg_map;
+    ::rust::repr::PtrLen throw$;
+    ::rust::behavior::trycatch (
+        [&] {
+          new (return$)::rpmostreecxx::FileToPackageMap *(
+              (self.*build_file_to_pkg_map$) ().release ());
           throw$.ptr = nullptr;
         },
         ::rust::detail::Fail (throw$));
@@ -5689,6 +5726,16 @@ complete_rpm_layering (::std::int32_t rootfs)
 }
 
 void
+deduplicate_tmpfiles_entries (::std::int32_t rootfs)
+{
+  ::rust::repr::PtrLen error$ = rpmostreecxx$cxxbridge1$deduplicate_tmpfiles_entries (rootfs);
+  if (error$.ptr)
+    {
+      throw ::rust::impl< ::rust::Error>::error (error$);
+    }
+}
+
+void
 passwd_cleanup (::std::int32_t rootfs)
 {
   ::rust::repr::PtrLen error$ = rpmostreecxx$cxxbridge1$passwd_cleanup (rootfs);
@@ -6094,16 +6141,6 @@ cache_branch_to_nevra (::rust::Str nevra) noexcept
   rpmostreecxx$cxxbridge1$cache_branch_to_nevra (nevra, &return$.value);
   return ::std::move (return$.value);
 }
-
-void
-deduplicate_tmpfiles_entries (::std::int32_t rootfs)
-{
-  ::rust::repr::PtrLen error$ = rpmostreecxx$cxxbridge1$deduplicate_tmpfiles_entries (rootfs);
-  if (error$.ptr)
-    {
-      throw ::rust::impl< ::rust::Error>::error (error$);
-    }
-}
 } // namespace rpmostreecxx
 
 extern "C"
@@ -6415,6 +6452,45 @@ extern "C"
       ::std::unique_ptr< ::rpmostreecxx::PackageMeta> *ptr) noexcept
   {
     ::rust::deleter_if< ::rust::detail::is_complete< ::rpmostreecxx::PackageMeta>::value>{}(ptr);
+  }
+
+  static_assert (::rust::detail::is_complete< ::rpmostreecxx::FileToPackageMap>::value,
+                 "definition of FileToPackageMap is required");
+  static_assert (sizeof (::std::unique_ptr< ::rpmostreecxx::FileToPackageMap>) == sizeof (void *),
+                 "");
+  static_assert (alignof (::std::unique_ptr< ::rpmostreecxx::FileToPackageMap>) == alignof (void *),
+                 "");
+  void
+  cxxbridge1$unique_ptr$rpmostreecxx$FileToPackageMap$null (
+      ::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> *ptr) noexcept
+  {
+    ::new (ptr)::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> ();
+  }
+  void
+  cxxbridge1$unique_ptr$rpmostreecxx$FileToPackageMap$raw (
+      ::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> *ptr,
+      ::rpmostreecxx::FileToPackageMap *raw) noexcept
+  {
+    ::new (ptr)::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> (raw);
+  }
+  ::rpmostreecxx::FileToPackageMap const *
+  cxxbridge1$unique_ptr$rpmostreecxx$FileToPackageMap$get (
+      ::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> const &ptr) noexcept
+  {
+    return ptr.get ();
+  }
+  ::rpmostreecxx::FileToPackageMap *
+  cxxbridge1$unique_ptr$rpmostreecxx$FileToPackageMap$release (
+      ::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> &ptr) noexcept
+  {
+    return ptr.release ();
+  }
+  void
+  cxxbridge1$unique_ptr$rpmostreecxx$FileToPackageMap$drop (
+      ::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> *ptr) noexcept
+  {
+    ::rust::deleter_if< ::rust::detail::is_complete< ::rpmostreecxx::FileToPackageMap>::value>{}(
+        ptr);
   }
 } // extern "C"
 
@@ -6818,6 +6894,5 @@ Vec< ::rpmostreecxx::LockedPackage>::truncate (::std::size_t len)
 {
   return cxxbridge1$rust_vec$rpmostreecxx$LockedPackage$truncate (this, len);
 }
-
 } // namespace cxxbridge1
 } // namespace rust

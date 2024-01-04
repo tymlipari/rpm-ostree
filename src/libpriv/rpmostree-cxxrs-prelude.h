@@ -28,6 +28,7 @@ namespace rpmostreecxx
 // its own bindings, so we maintain typedefs.  Update cxxrsutil.rs first.
 typedef ::OstreeDeployment OstreeDeployment;
 typedef ::OstreeRepo OstreeRepo;
+typedef ::OstreeRepoFile OstreeRepoFile;
 typedef ::OstreeRepoTransactionStats OstreeRepoTransactionStats;
 typedef ::OstreeSysroot OstreeSysroot;
 typedef ::OstreeSePolicy OstreeSePolicy;
