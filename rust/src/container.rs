@@ -381,7 +381,7 @@ pub fn container_encapsulate(args: Vec<String>) -> CxxResult<()> {
 
     // Walk the filesystem
     progress_task("Building package mapping", || {
-        let pkg_cache = q.build_file_to_pkg_map()?;
+        let pkg_cache = q.build_file_to_pkg_map(root.downcast_ref::<ostree::RepoFile>().unwrap().reborrow_cxx())?;
         build_mapping_recurse(&mut Utf8PathBuf::from("/"), &root, &pkg_cache, &mut state)
     })?;
 

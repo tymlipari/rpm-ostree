@@ -26,6 +26,7 @@
 #include <rpm/header.h>
 #include <rpm/rpmtag.h>
 #include <string.h>
+#include <unordered_set>
 
 static inline void
 cleanup_rpmtdFreeData (rpmtd *tdp)
@@ -202,9 +203,11 @@ RpmTs::package_meta (const rust::Str name) const
 }
 
 std::unique_ptr<FileToPackageMap>
-RpmTs::build_file_to_pkg_map () const
+RpmTs::build_file_to_pkg_map (const OstreeRepoFile& fsroot) const
 {
   std::unique_ptr<FileToPackageMap> result = std::make_unique<FileToPackageMap> ();
+
+  GFile* fsroot_g = G_FILE (&fsroot);
 
   g_auto (rpmdbMatchIterator) mi = rpmtsInitIterator (_ts->ts, RPMDBI_PACKAGES, NULL, 0);
   if (mi == NULL)
@@ -219,6 +222,7 @@ RpmTs::build_file_to_pkg_map () const
       if (fileitr == NULL)
         throw std::runtime_error ("Couldn't create file iterator");
 
+      std::unordered_set<std::string> checked_paths;
       rpmfiInit (fileitr, 0);
       while (rpmfiNext (fileitr) >= 0)
         {
@@ -226,7 +230,20 @@ RpmTs::build_file_to_pkg_map () const
 
           if (RPMFILE_IS_INSTALLED (rpmfiFState (fileitr)) && !S_ISDIR (fmode))
             {
-              // TODO, see if dirname is remapped
+              // Check to see if the dirname is remapped on the system
+              const char* dirname = rpmfiDN (fileitr);
+              if (checked_paths.find (dirname) != checked_paths.end ())
+                {
+                  g_autoptr (GFile) child_path = g_file_get_child (fsroot_g, dirname);
+                  g_autoptr (GFileInfo) child_info = g_file_query_info (child_path, "*", G_FILE_QUERY_INFO_NONE, NULL, NULL);
+                  
+                  if (child_info == NULL)
+                    throw std::runtime_error ("Failed to get file info");
+
+                  printf ("DEBUG -- FINFO -- %s: %d\n", dirname, g_file_info_get_file_type (child_info));
+
+                  checked_paths.insert (dirname);
+                }
 
               size_t path_hash = std::hash<std::string_view>{} (rpmfiFN (fileitr));
               result->_path_hash_to_pkgs[path_hash].insert (pkg_nevra);

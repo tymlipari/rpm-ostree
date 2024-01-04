@@ -100,7 +100,7 @@ public:
   rpmts get_ts () const;
   rust::Vec<rust::String> packages_providing_file (const rust::Str path) const;
   std::unique_ptr<PackageMeta> package_meta (const rust::Str package) const;
-  std::unique_ptr<FileToPackageMap> build_file_to_pkg_map () const;
+  std::unique_ptr<FileToPackageMap> build_file_to_pkg_map (const OstreeRepoFile& fsroot) const;
 
 private:
   ::RpmOstreeRefTs *_ts;

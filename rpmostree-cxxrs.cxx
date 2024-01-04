@@ -3293,16 +3293,18 @@ extern "C"
 
   ::rust::repr::PtrLen
   rpmostreecxx$cxxbridge1$RpmTs$build_file_to_pkg_map (
-      ::rpmostreecxx::RpmTs const &self, ::rpmostreecxx::FileToPackageMap **return$) noexcept
+      ::rpmostreecxx::RpmTs const &self, ::rpmostreecxx::OstreeRepoFile const &fsroot,
+      ::rpmostreecxx::FileToPackageMap **return$) noexcept
   {
     ::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> (
-        ::rpmostreecxx::RpmTs::*build_file_to_pkg_map$) () const
+        ::rpmostreecxx::RpmTs::*build_file_to_pkg_map$) (::rpmostreecxx::OstreeRepoFile const &)
+        const
         = &::rpmostreecxx::RpmTs::build_file_to_pkg_map;
     ::rust::repr::PtrLen throw$;
     ::rust::behavior::trycatch (
         [&] {
           new (return$)::rpmostreecxx::FileToPackageMap *(
-              (self.*build_file_to_pkg_map$) ().release ());
+              (self.*build_file_to_pkg_map$) (fsroot).release ());
           throw$.ptr = nullptr;
         },
         ::rust::detail::Fail (throw$));

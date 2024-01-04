@@ -915,7 +915,7 @@ pub mod ffi {
         // Methods on RpmTs
         fn packages_providing_file(self: &RpmTs, path: &str) -> Result<Vec<String>>;
         fn package_meta(self: &RpmTs, name: &str) -> Result<UniquePtr<PackageMeta>>;
-        fn build_file_to_pkg_map(self: &RpmTs) -> Result<UniquePtr<FileToPackageMap>>;
+        fn build_file_to_pkg_map(self: &RpmTs, fsroot: &OstreeRepoFile) -> Result<UniquePtr<FileToPackageMap>>;
 
         // Methods on PackageMeta
         fn size(self: &PackageMeta) -> u64;
