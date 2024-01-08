@@ -92,6 +92,7 @@ struct RpmFileDb
 
   bool use_fs_state;
   std::unordered_map<ino_t, std::set<std::string>> inode_to_path;
+  mutable std::unordered_map<std::string, ino_t> path_to_inode;
 
   rust::Vec<rust::String>
   packages_for_file (rust::Str path) const;

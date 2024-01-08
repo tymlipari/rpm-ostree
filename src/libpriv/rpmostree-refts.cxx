@@ -47,14 +47,21 @@ split_filepath(std::string_view path)
     return { path.substr(0, last_sep), path.substr(last_sep) };
 }
 
-static inline std::pair<std::optional<ino_t>, std::string_view>
-find_inode_for_dirname (std::string_view dirname)
+static inline std::pair<std::optional<ino_t>, std::string>
+find_inode_for_dirname (std::string dirname, std::unordered_map<std::string, ino_t>* inode_cache)
 {
   do
     {
+      auto cache_itr = inode_cache->find (dirname);
+      if (cache_itr != inode_cache->end ())
+      {
+        return { cache_itr->second, dirname };
+      }
+
       struct stat finfo;
-      if (stat (std::string (dirname).c_str (), &finfo) == 0)
+      if (stat (dirname.c_str (), &finfo) == 0)
         {
+          (*inode_cache)[dirname] = finfo.st_ino;
           return std::pair { finfo.st_ino, dirname };
         }
 
@@ -121,7 +128,7 @@ RpmFileDb::packages_for_file (rust::Str path) const
 
       if (use_fs_state)
         {
-          const auto& [sel_inode, sel_dirname] = find_inode_for_dirname (dirname);
+          const auto& [sel_inode, sel_dirname] = find_inode_for_dirname (std::string (dirname), &path_to_inode);
           dir_inode = sel_inode;
           dirname = sel_dirname;
         }
@@ -249,7 +256,7 @@ RpmTs::build_file_cache_from_rpmdb (bool use_fs_state) const
 
           if (use_fs_state && !dirname.empty())
             {
-              auto const& [found_inode, found_path] = find_inode_for_dirname (dirname);
+              auto const& [found_inode, found_path] = find_inode_for_dirname (std::string (dirname), &result->path_to_inode);
               dirname = found_path;
               dirname_inode = found_inode;
 
