@@ -1107,7 +1107,7 @@ using ClientConnection = ::rpmostreecxx::ClientConnection;
 using RPMDiff = ::rpmostreecxx::RPMDiff;
 using RpmOstreeDiffPrintFormat = ::rpmostreecxx::RpmOstreeDiffPrintFormat;
 using Progress = ::rpmostreecxx::Progress;
-using FileToPackageMap = ::rpmostreecxx::FileToPackageMap;
+using RpmFileDb = ::rpmostreecxx::RpmFileDb;
 using RpmTs = ::rpmostreecxx::RpmTs;
 using PackageMeta = ::rpmostreecxx::PackageMeta;
 }

@@ -37,6 +37,36 @@ cleanup_rpmtdFreeData (rpmtd *tdp)
 }
 #define _cleanup_rpmtddata_ __attribute__ ((cleanup (cleanup_rpmtdFreeData)))
 
+static inline std::pair<std::string_view, std::string_view>
+split_filepath(std::string_view path)
+{
+  auto last_sep = path.rfind('/');
+  if (last_sep == std::string_view::npos)
+    return { std::string_view{}, path };
+  else
+    return { path.substr(0, last_sep), path.substr(last_sep) };
+}
+
+static inline std::pair<std::optional<ino_t>, std::string_view>
+find_inode_for_dirname (std::string_view dirname)
+{
+  do
+    {
+      struct stat finfo;
+      if (stat (std::string (dirname).c_str (), &finfo) == 0)
+        {
+          return std::pair { finfo.st_ino, dirname };
+        }
+
+      // Check the parent
+      const auto& [newdirname, _] = split_filepath (dirname);
+      dirname = newdirname;
+    }
+  while (!dirname.empty());
+
+  return { std::nullopt , dirname };
+}
+
 /*
  * A wrapper for an `rpmts` that supports:
  *
@@ -79,46 +109,33 @@ namespace rpmostreecxx
 {
 
 rust::Vec<rust::String>
-FileToPackageMap::packages_for_file (const OstreeRepoFile& file) const
+RpmFileDb::packages_for_file (rust::Str path) const
 {
-  GFile* gfile = G_FILE (&file);
-  g_autoptr(GFile) parentfile = g_file_get_parent (gfile);
+  rust::Vec<rust::String> result;
 
-  // Check to see if this file's directory was remapped
-  // on the file system
-  std::optional<std::string_view> remapped_dirname;
-  if (parentfile != NULL)
+  auto [dirname, basename] = split_filepath (std::string_view (path.data (), path.size ()));
+  auto itr = basename_to_pkginfo.find (std::string (path.data (), path.size ()));
+  if (itr != basename_to_pkginfo.end ())
     {
-      std::string dirname = g_file_peek_path (parentfile);
+      std::optional<ino_t> dir_inode;
 
-      auto remapitr = _remapped_paths.find (dirname);
-      if (remapitr != _remapped_paths.end ())
-        remapped_dirname = std::string_view (remapitr->second);
+      if (use_fs_state)
+        {
+          const auto& [sel_inode, sel_dirname] = find_inode_for_dirname (dirname);
+          dir_inode = sel_inode;
+          dirname = sel_dirname;
+        }
+
+      for (const RpmFileDb::FilePackageInfo& info : itr->second)
+        {
+          if ((dir_inode && info.dir_inode == dir_inode) || (info.dirname == dirname))
+            {
+              result.push_back (info.pkg_nevra);
+            }
+        }
     }
 
-  // Determine the hash for the fs path, using the remapped parent
-  // if necessary
-  size_t path_hash;
-  if (remapped_dirname)
-    {
-      g_autofree const char* basename = g_file_get_basename (gfile);
-      auto remapped_path = std::string(*remapped_dirname) + "/" + basename;
-      path_hash = std::hash<std::string>{} (remapped_path);
-    }
-  else
-    {
-      path_hash = std::hash<std::string_view>{} (g_file_peek_path (gfile));
-    }
-
-  // Return the contents of our cache hit
-  rust::Vec<rust::String> ret_pkgs;
-  auto cacheitr = _path_hash_to_pkgs.find (path_hash);
-  if (cacheitr != _path_hash_to_pkgs.end ())
-    {
-      for (const rust::String& pkgid : cacheitr->second)
-        ret_pkgs.emplace_back (pkgid);
-    }
-  return ret_pkgs;
+  return result;
 }
 
 RpmTs::RpmTs (RpmOstreeRefTs *ts) { _ts = ts; }
@@ -202,56 +219,53 @@ RpmTs::package_meta (const rust::Str name) const
   return retval;
 }
 
-std::unique_ptr<FileToPackageMap>
-RpmTs::build_file_to_pkg_map (const OstreeRepoFile& fsroot) const
+std::unique_ptr<RpmFileDb>
+RpmTs::build_file_cache_from_rpmdb (bool use_fs_state) const
 {
-  std::unique_ptr<FileToPackageMap> result = std::make_unique<FileToPackageMap> ();
+  std::unique_ptr<RpmFileDb> result = std::make_unique<RpmFileDb> ();
+  result->use_fs_state = use_fs_state;
 
-  GFile* fsroot_g = G_FILE (&fsroot);
-
+  // Walk the package set
   g_auto (rpmdbMatchIterator) mi = rpmtsInitIterator (_ts->ts, RPMDBI_PACKAGES, NULL, 0);
   if (mi == NULL)
-      throw std::runtime_error ("Failed to read rpmdb");
+    throw std::runtime_error ("Failed to read package set from rpmdb");
 
   Header h;
   while ((h = rpmdbNextIterator (mi)) != NULL)
     {
-      rust::String pkg_nevra = rpmostreecxx::header_get_nevra (h);
+      auto pkg_nevra = rpmostreecxx::header_get_nevra (h);
 
-      g_auto (rpmfi) fileitr = rpmfiNew (_ts->ts, h, 0, 0);
-      if (fileitr == NULL)
-        throw std::runtime_error ("Couldn't create file iterator");
+      // Walk each file in the package and add it to the cache
+      g_auto (rpmfi) fi = rpmfiNew (_ts->ts, h, 0, 0);
+      if (fi == NULL)
+        throw std::runtime_error ("Failed to create file iterator for package");
 
-      std::unordered_set<std::string> checked_paths;
-      rpmfiInit (fileitr, 0);
-      while (rpmfiNext (fileitr) >= 0)
+      rpmfiInit (fi, 0);
+      while (rpmfiNext (fi) >= 0)
         {
-          rpm_mode_t fmode = rpmfiFMode (fileitr);
+          std::string basename = rpmfiBN (fi);
+          std::string_view dirname = rpmfiDN (fi); 
+          std::optional<ino_t> dirname_inode;
 
-          if (RPMFILE_IS_INSTALLED (rpmfiFState (fileitr)) && !S_ISDIR (fmode))
+          if (use_fs_state && !dirname.empty())
             {
-              // Check to see if the dirname is remapped on the system
-              const char* dirname = rpmfiDN (fileitr);
-              if (checked_paths.find (dirname) != checked_paths.end ())
-                {
-                  g_autoptr (GFile) child_path = g_file_get_child (fsroot_g, dirname);
-                  g_autoptr (GFileInfo) child_info = g_file_query_info (child_path, "*", G_FILE_QUERY_INFO_NONE, NULL, NULL);
-                  
-                  if (child_info == NULL)
-                    throw std::runtime_error ("Failed to get file info");
+              auto const& [found_inode, found_path] = find_inode_for_dirname (dirname);
+              dirname = found_path;
+              dirname_inode = found_inode;
 
-                  printf ("DEBUG -- FINFO -- %s: %d\n", dirname, g_file_info_get_file_type (child_info));
-
-                  checked_paths.insert (dirname);
-                }
-
-              size_t path_hash = std::hash<std::string_view>{} (rpmfiFN (fileitr));
-              result->_path_hash_to_pkgs[path_hash].insert (pkg_nevra);
+              // Log the path
+              result->inode_to_path[*dirname_inode].emplace (dirname);
             }
+
+          result->basename_to_pkginfo[basename].emplace_back(RpmFileDb::FilePackageInfo {
+            pkg_nevra,
+            std::string (dirname),
+            dirname_inode,
+          });
         }
     }
 
-    return result;
+  return result;
 }
 
 }

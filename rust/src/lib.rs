@@ -896,7 +896,7 @@ pub mod ffi {
     unsafe extern "C++" {
         include!("rpmostree-rpm-util.h");
         #[allow(missing_debug_implementations)]
-        type FileToPackageMap;
+        type RpmFileDb;
         #[allow(missing_debug_implementations)]
         type RpmTs;
         #[allow(missing_debug_implementations)]
@@ -909,13 +909,13 @@ pub mod ffi {
         fn rpmts_for_commit(repo: &OstreeRepo, rev: &str) -> Result<UniquePtr<RpmTs>>;
         fn rpmdb_package_name_list(dfd: i32, path: String) -> Result<Vec<String>>;
 
-        // Methods on FileToPackageMap
-        fn packages_for_file(self: &FileToPackageMap, file: &OstreeRepoFile) -> Result<Vec<String>>;
+        // Methods on RpmFileDb
+        fn packages_for_file(self: &RpmFileDb, path: &str) -> Result<Vec<String>>;
 
         // Methods on RpmTs
         fn packages_providing_file(self: &RpmTs, path: &str) -> Result<Vec<String>>;
         fn package_meta(self: &RpmTs, name: &str) -> Result<UniquePtr<PackageMeta>>;
-        fn build_file_to_pkg_map(self: &RpmTs, fsroot: &OstreeRepoFile) -> Result<UniquePtr<FileToPackageMap>>;
+        fn build_file_cache_from_rpmdb(self: &RpmTs, use_fs_state: bool) -> Result<UniquePtr<RpmFileDb>>;
 
         // Methods on PackageMeta
         fn size(self: &PackageMeta) -> u64;

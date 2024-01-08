@@ -1325,7 +1325,7 @@ using ClientConnection = ::rpmostreecxx::ClientConnection;
 using RPMDiff = ::rpmostreecxx::RPMDiff;
 using RpmOstreeDiffPrintFormat = ::rpmostreecxx::RpmOstreeDiffPrintFormat;
 using Progress = ::rpmostreecxx::Progress;
-using FileToPackageMap = ::rpmostreecxx::FileToPackageMap;
+using RpmFileDb = ::rpmostreecxx::RpmFileDb;
 using RpmTs = ::rpmostreecxx::RpmTs;
 using PackageMeta = ::rpmostreecxx::PackageMeta;
 }
@@ -3239,17 +3239,17 @@ extern "C"
   }
 
   ::rust::repr::PtrLen
-  rpmostreecxx$cxxbridge1$FileToPackageMap$packages_for_file (
-      ::rpmostreecxx::FileToPackageMap const &self, ::rpmostreecxx::OstreeRepoFile const &file,
+  rpmostreecxx$cxxbridge1$RpmFileDb$packages_for_file (
+      ::rpmostreecxx::RpmFileDb const &self, ::rust::Str path,
       ::rust::Vec< ::rust::String> *return$) noexcept
   {
-    ::rust::Vec< ::rust::String> (::rpmostreecxx::FileToPackageMap::*packages_for_file$) (
-        ::rpmostreecxx::OstreeRepoFile const &) const
-        = &::rpmostreecxx::FileToPackageMap::packages_for_file;
+    ::rust::Vec< ::rust::String> (::rpmostreecxx::RpmFileDb::*packages_for_file$) (::rust::Str)
+        const
+        = &::rpmostreecxx::RpmFileDb::packages_for_file;
     ::rust::repr::PtrLen throw$;
     ::rust::behavior::trycatch (
         [&] {
-          new (return$)::rust::Vec< ::rust::String> ((self.*packages_for_file$) (file));
+          new (return$)::rust::Vec< ::rust::String> ((self.*packages_for_file$) (path));
           throw$.ptr = nullptr;
         },
         ::rust::detail::Fail (throw$));
@@ -3292,19 +3292,18 @@ extern "C"
   }
 
   ::rust::repr::PtrLen
-  rpmostreecxx$cxxbridge1$RpmTs$build_file_to_pkg_map (
-      ::rpmostreecxx::RpmTs const &self, ::rpmostreecxx::OstreeRepoFile const &fsroot,
-      ::rpmostreecxx::FileToPackageMap **return$) noexcept
+  rpmostreecxx$cxxbridge1$RpmTs$build_file_cache_from_rpmdb (
+      ::rpmostreecxx::RpmTs const &self, bool use_fs_state,
+      ::rpmostreecxx::RpmFileDb **return$) noexcept
   {
-    ::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> (
-        ::rpmostreecxx::RpmTs::*build_file_to_pkg_map$) (::rpmostreecxx::OstreeRepoFile const &)
-        const
-        = &::rpmostreecxx::RpmTs::build_file_to_pkg_map;
+    ::std::unique_ptr< ::rpmostreecxx::RpmFileDb> (
+        ::rpmostreecxx::RpmTs::*build_file_cache_from_rpmdb$) (bool) const
+        = &::rpmostreecxx::RpmTs::build_file_cache_from_rpmdb;
     ::rust::repr::PtrLen throw$;
     ::rust::behavior::trycatch (
         [&] {
-          new (return$)::rpmostreecxx::FileToPackageMap *(
-              (self.*build_file_to_pkg_map$) (fsroot).release ());
+          new (return$)::rpmostreecxx::RpmFileDb *(
+              (self.*build_file_cache_from_rpmdb$) (use_fs_state).release ());
           throw$.ptr = nullptr;
         },
         ::rust::detail::Fail (throw$));
@@ -6456,43 +6455,39 @@ extern "C"
     ::rust::deleter_if< ::rust::detail::is_complete< ::rpmostreecxx::PackageMeta>::value>{}(ptr);
   }
 
-  static_assert (::rust::detail::is_complete< ::rpmostreecxx::FileToPackageMap>::value,
-                 "definition of FileToPackageMap is required");
-  static_assert (sizeof (::std::unique_ptr< ::rpmostreecxx::FileToPackageMap>) == sizeof (void *),
-                 "");
-  static_assert (alignof (::std::unique_ptr< ::rpmostreecxx::FileToPackageMap>) == alignof (void *),
-                 "");
+  static_assert (::rust::detail::is_complete< ::rpmostreecxx::RpmFileDb>::value,
+                 "definition of RpmFileDb is required");
+  static_assert (sizeof (::std::unique_ptr< ::rpmostreecxx::RpmFileDb>) == sizeof (void *), "");
+  static_assert (alignof (::std::unique_ptr< ::rpmostreecxx::RpmFileDb>) == alignof (void *), "");
   void
-  cxxbridge1$unique_ptr$rpmostreecxx$FileToPackageMap$null (
-      ::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> *ptr) noexcept
+  cxxbridge1$unique_ptr$rpmostreecxx$RpmFileDb$null (
+      ::std::unique_ptr< ::rpmostreecxx::RpmFileDb> *ptr) noexcept
   {
-    ::new (ptr)::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> ();
+    ::new (ptr)::std::unique_ptr< ::rpmostreecxx::RpmFileDb> ();
   }
   void
-  cxxbridge1$unique_ptr$rpmostreecxx$FileToPackageMap$raw (
-      ::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> *ptr,
-      ::rpmostreecxx::FileToPackageMap *raw) noexcept
+  cxxbridge1$unique_ptr$rpmostreecxx$RpmFileDb$raw (
+      ::std::unique_ptr< ::rpmostreecxx::RpmFileDb> *ptr, ::rpmostreecxx::RpmFileDb *raw) noexcept
   {
-    ::new (ptr)::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> (raw);
+    ::new (ptr)::std::unique_ptr< ::rpmostreecxx::RpmFileDb> (raw);
   }
-  ::rpmostreecxx::FileToPackageMap const *
-  cxxbridge1$unique_ptr$rpmostreecxx$FileToPackageMap$get (
-      ::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> const &ptr) noexcept
+  ::rpmostreecxx::RpmFileDb const *
+  cxxbridge1$unique_ptr$rpmostreecxx$RpmFileDb$get (
+      ::std::unique_ptr< ::rpmostreecxx::RpmFileDb> const &ptr) noexcept
   {
     return ptr.get ();
   }
-  ::rpmostreecxx::FileToPackageMap *
-  cxxbridge1$unique_ptr$rpmostreecxx$FileToPackageMap$release (
-      ::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> &ptr) noexcept
+  ::rpmostreecxx::RpmFileDb *
+  cxxbridge1$unique_ptr$rpmostreecxx$RpmFileDb$release (
+      ::std::unique_ptr< ::rpmostreecxx::RpmFileDb> &ptr) noexcept
   {
     return ptr.release ();
   }
   void
-  cxxbridge1$unique_ptr$rpmostreecxx$FileToPackageMap$drop (
-      ::std::unique_ptr< ::rpmostreecxx::FileToPackageMap> *ptr) noexcept
+  cxxbridge1$unique_ptr$rpmostreecxx$RpmFileDb$drop (
+      ::std::unique_ptr< ::rpmostreecxx::RpmFileDb> *ptr) noexcept
   {
-    ::rust::deleter_if< ::rust::detail::is_complete< ::rpmostreecxx::FileToPackageMap>::value>{}(
-        ptr);
+    ::rust::deleter_if< ::rust::detail::is_complete< ::rpmostreecxx::RpmFileDb>::value>{}(ptr);
   }
 } // extern "C"
 

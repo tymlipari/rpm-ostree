@@ -27,7 +27,7 @@ use ostree_ext::prelude::*;
 use ostree_ext::{gio, oci_spec, ostree};
 
 use crate::cxxrsutil::FFIGObjectReWrap;
-use crate::ffi::FileToPackageMap;
+use crate::ffi::RpmFileDb;
 use crate::progress::progress_task;
 use crate::CxxResult;
 
@@ -131,7 +131,7 @@ impl From<MappingBuilder> for ObjectMeta {
 fn build_mapping_recurse(
     path: &mut Utf8PathBuf,
     dir: &gio::File,
-    pkg_cache: &FileToPackageMap,
+    pkg_cache: &RpmFileDb,
     state: &mut MappingBuilder,
 ) -> Result<()> {
     use std::collections::btree_map::Entry;
@@ -157,7 +157,7 @@ fn build_mapping_recurse(
                 }
 
                 //let mut pkgs = ts.packages_providing_file(path.as_str())?;
-                let mut pkgs = pkg_cache.packages_for_file(child.reborrow_cxx())?;
+                let mut pkgs = pkg_cache.packages_for_file(path.as_str())?;
                 // Let's be deterministic (but _unstable because we don't care about behavior of equal strings)
                 pkgs.sort_unstable();
                 // For now, we pick the alphabetically first package providing a file
@@ -381,8 +381,8 @@ pub fn container_encapsulate(args: Vec<String>) -> CxxResult<()> {
 
     // Walk the filesystem
     progress_task("Building package mapping", || {
-        let pkg_cache = q.build_file_to_pkg_map(root.downcast_ref::<ostree::RepoFile>().unwrap().reborrow_cxx())?;
-        build_mapping_recurse(&mut Utf8PathBuf::from("/"), &root, &pkg_cache, &mut state)
+        let file_cache = q.build_file_cache_from_rpmdb(true)?;
+        build_mapping_recurse(&mut Utf8PathBuf::from("/"), &root, &file_cache, &mut state)
     })?;
 
     let src_pkgs: HashSet<_> = state.packagemeta.iter().map(|p| &p.srcid).collect();

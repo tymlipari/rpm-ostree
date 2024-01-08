@@ -50,17 +50,6 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC (RpmOstreeRefTs, rpmostree_refts_unref);
 namespace rpmostreecxx
 {
 
-struct FileToPackageMap
-{
-  std::unordered_map<size_t, std::set<rust::String>> _path_hash_to_pkgs;
-  std::unordered_map<std::string, std::string> _remapped_paths;
-
-  FileToPackageMap() = default;
-
-  rust::Vec<rust::String>
-  packages_for_file (const OstreeRepoFile& file) const;
-};
-
 struct PackageMeta
 {
   uint64_t _size;
@@ -91,6 +80,23 @@ struct PackageMeta
   };
 };
 
+struct RpmFileDb
+{
+  struct FilePackageInfo
+  {
+    rust::String pkg_nevra;
+    std::string dirname;
+    std::optional<ino_t> dir_inode;
+  };
+  std::unordered_map<std::string, std::vector<FilePackageInfo>> basename_to_pkginfo;
+
+  bool use_fs_state;
+  std::unordered_map<ino_t, std::set<std::string>> inode_to_path;
+
+  rust::Vec<rust::String>
+  packages_for_file (rust::Str path) const;
+};
+
 // A simple C++ wrapper for a librpm C type, so we can expose it to Rust via cxx.rs.
 class RpmTs
 {
@@ -100,7 +106,7 @@ public:
   rpmts get_ts () const;
   rust::Vec<rust::String> packages_providing_file (const rust::Str path) const;
   std::unique_ptr<PackageMeta> package_meta (const rust::Str package) const;
-  std::unique_ptr<FileToPackageMap> build_file_to_pkg_map (const OstreeRepoFile& fsroot) const;
+  std::unique_ptr<RpmFileDb> build_file_cache_from_rpmdb (bool use_fs_state) const;
 
 private:
   ::RpmOstreeRefTs *_ts;
